@@ -357,6 +357,7 @@ function sessKey(s){return s.SCH_DATE+s.SCH_APN+s.CLINIC_NO}
 function sessState(s){
   var d=schDate(s), m=nowMin(), extra=S.taken[sessKey(s)]||0;
   if(s.NEXT_VIEW===-1) return {k:'off',t:'停診'};
+  if(s.NEXT_VIEW<-1) return {k:'stop',t:'停止網路掛號'}; // iHIS 實測出現 -2，文件未定義
   if(s.NEXT_VIEW===0) return {k:'full',t:'額滿'};
   if(d===today()){
     if(m>toMin(s.END_TIME)) return {k:'end',t:'已結束'};
