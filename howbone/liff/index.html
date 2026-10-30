@@ -177,7 +177,7 @@ var CONFIG = {
   ADDR: '325桃園市龍潭區中興路303號',
   MAP: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3619.7079296914494!2d121.23108127537124!3d24.873823077920488!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x34683d3c220c509b%3A0xd11d99adcd66c906!2z6YeN5oW26aqo56eR6Ki65omA!5e0!3m2!1szh-TW!2stw!4v1774581048094!5m2!1szh-TW!2stw',
   SHEET_ID: '1DijavtInC_n4SFSGVfnfKMMzKvrkGAReri41WTvPryM', // 與官網共用
-  IHIS_URLS: ['https://wsvr.ihis.com.tw:8088/?fn=ihisexg&id=', 'https://wsvr.ihis.com.tw/api/WebReg/iHis.php?fn=ihisexg&id='],
+  IHIS_URLS: ['https://wsvr.ihis.com.tw:8088/?fn=ihisexg&id='], // 依《重慶WebAPI文件說明》2026-10-25 版，舊網址 2026-11-30 停用
   LIVE_READ: true,        // 只讀取 J01 班表、J02 燈號；測試版永遠不呼叫 J03–J07
   CHECKIN_BEFORE_MIN: 15, // 報到截止 = 預計時間前 15 分鐘
   SELFPAY_CANCEL_LIMIT: 2,
@@ -303,8 +303,8 @@ function ihis(fn, body){
     var t=setTimeout(function(){ctl&&ctl.abort()},6000);
     return fetch(u+fn,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:ctl&&ctl.signal})
       .then(function(r){clearTimeout(t);return r.json()})
-      .then(function(j){if(j.RTN_CODE!=='0')throw new Error(j.RTN_MSG||'RTN_CODE');return j})
-      .catch(function(e){clearTimeout(t);return tryNext()});
+      .then(function(j){if(j.RTN_CODE!=='0'){var er=new Error(j.RTN_MSG||'RTN_CODE');er.rtn=true;throw er}return j})
+      .catch(function(e){clearTimeout(t);if(e&&e.rtn)throw e;return tryNext()});
   }
   return tryNext();
 }
@@ -340,7 +340,7 @@ function mockLed(){
 function loadLed(){
   var mock=mockLed;
   if(!CONFIG.LIVE_READ){mock();return Promise.resolve()}
-  return ihis('J02',{HOSP_ID:CONFIG.HOSP_ID}).then(function(j){ if(!j.LED_LST||!j.LED_LST.length) throw 0; LED=j.LED_LST; LED_SRC='iHIS 即時'; }).catch(mock);
+  return ihis('J02',{HOSP_ID:CONFIG.HOSP_ID}).then(function(j){ LED=j.LED_LST||[]; LED_SRC='iHIS 即時'; }).catch(function(e){ if(e&&e.rtn){ LED=[]; LED_SRC='iHIS 即時'; } else mock(); }); // iHIS 回「無看診進度」時不使用示範燈號
 }
 function schDate(s){return s.SCH_DATE.slice(0,4)+'-'+s.SCH_DATE.slice(4,6)+'-'+s.SCH_DATE.slice(6,8)}
 function sessionNow(){
@@ -466,14 +466,14 @@ function table(rows, cls){
 function ledInfo(){
   var sess=sessionNow(), l=(LED||[])[0];
   if(!sess){ var n=nextSession(); return {active:false, text: n? '下一診：'+(schDate(n)===today()?'今天':md(schDate(n)))+' '+APN[n.SCH_APN]+'診 '+hm(toMin(n.ST_TIME))+' 開始':'目前非看診時段'} }
-  if(!l) return {active:true, no:'--', text:''};
+  if(!l) return {active:true, no:'--', name:'一診', upd:hm(nowMin()), stale:false, sess:sess, text:'診間尚未開始叫號'};
   var u=String(l.UPD_TIME), upd=toMin(u.slice(8,12)), stale=nowMin()-upd>15;
   return {active:true, no:l.LED_NO, name:l.CLI_NA, upd:hm(upd), stale:stale, sess:sess};
 }
 function renderQueue(){
   var box=$('#qbox'); if(!box) return; var q=ledInfo();
   if(!q.active){ box.innerHTML='<div class="q-box"><div class="q-name">一診</div><div style="font-size:1.25rem;font-weight:700;margin-top:8px">'+esc(q.text)+'</div></div><p class="q-note">非看診時段不顯示燈號</p>'; return }
-  box.innerHTML='<div class="q-grid"><div class="q-box"><div class="q-name">'+esc(q.name||'一診')+'｜'+esc(q.sess.DOCT_NAME)+'</div><div style="opacity:.8">目前叫號</div><div class="q-no">'+esc(q.no)+'</div></div></div><p class="q-note">'+(q.stale?'燈號更新於 '+q.upd+'，請以現場為準':'燈號更新於 '+q.upd)+'</p>';
+  box.innerHTML='<div class="q-grid"><div class="q-box"><div class="q-name">'+esc(q.name||'一診')+'｜'+esc(q.sess.DOCT_NAME)+'</div><div style="opacity:.8">目前叫號</div><div class="q-no">'+esc(q.no)+'</div></div></div><p class="q-note">'+(q.text?esc(q.text):q.stale?'燈號更新於 '+q.upd+'，請以現場為準':'燈號更新於 '+q.upd)+'</p>';
 }
 function bindGo(v){ $$('[data-go]',v).forEach(function(b){b.onclick=function(){go(b.dataset.go)}}) }
 function upcoming(){
