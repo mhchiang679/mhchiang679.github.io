@@ -147,6 +147,18 @@
             color: #fff;
             text-decoration: underline;
         }
+
+        /* 門診時刻表：本週／下週切換、今日標示 */
+        .week-tab {
+            border: 1px solid #004080; background: #fff; color: #004080;
+            padding: 6px 18px; border-radius: 20px; font-size: 1rem; cursor: pointer;
+        }
+        .week-tab.active { background: #004080; color: #fff; }
+        #schedule-head th.today { background: #f7b500; color: #222; }
+        #schedule-container td.today { background: #fff8e1; }
+        #schedule-container td.past { color: #aaa; }
+        .sch-off { color: #d9534f; background: #ffeeee; }
+        .sch-tag { display: inline-block; font-size: 0.8rem; color: #d9534f; border: 1px solid #d9534f; border-radius: 10px; padding: 0 6px; margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -215,11 +227,17 @@
             <div class="container">
                 <h2 style="text-align: center; margin-bottom: 30px;">門診與復健時刻表</h2>
                 
-                <h3 style="color: #004080; margin-top: 0; margin-bottom: 15px; font-size: 1.4rem;">醫師門診時刻表</h3>
-                <div class="card" style="overflow-x: auto; margin-bottom: 40px; padding: 20px;">
+                <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px;">
+                    <h3 style="color: #004080; margin: 0; font-size: 1.4rem;">醫師門診時刻表</h3>
+                    <div id="schedule-week-tabs" style="display: flex; gap: 8px;">
+                        <button type="button" class="week-tab active" data-week="0">本週</button>
+                        <button type="button" class="week-tab" data-week="1">下週</button>
+                    </div>
+                </div>
+                <div class="card" style="overflow-x: auto; margin-bottom: 10px; padding: 20px;">
                     <table style="width: 100%; border-collapse: collapse; text-align: center; min-width: 600px;">
                         <thead>
-                            <tr style="background-color: #004080; color: #fff;">
+                            <tr id="schedule-head" style="background-color: #004080; color: #fff;">
                                 <th style="padding: 15px; border: 1px solid #ddd;">時段</th>
                                 <th style="padding: 15px; border: 1px solid #ddd;">星期一</th>
                                 <th style="padding: 15px; border: 1px solid #ddd;">星期二</th>
@@ -234,6 +252,7 @@
                         </tbody>
                     </table>
                 </div>
+                <p id="schedule-note" style="margin: 0 0 40px; font-size: 0.9rem; color: #888;">班表由診所掛號系統即時提供，如有異動以現場公告為準。</p>
 
                 <h3 style="color: #0060a8; margin-top: 20px; margin-bottom: 15px; font-size: 1.4rem;">復健治療時刻表</h3>
                 <div class="card" style="overflow-x: auto; margin-bottom: 40px; padding: 20px;">
@@ -494,44 +513,116 @@
         }
 
         // ==========================================
-        // 5. 渲染：門診時刻表
+        // 5. 門診時刻表：iHIS J01 即時班表（本週＋下週）
         // ==========================================
-        function renderSchedule(rows) {
-            let html = '';
-            if(rows.length === 0) {
-                html = '<tr><td colspan="7" class="loading-text">目前沒有門診時刻表資料。</td></tr>';
-            } else {
-                rows.forEach((row) => {
-                    const timeSlot = (row.c[0] && row.c[0].v) ? row.c[0].v : '';
-                    const mon = (row.c[1] && row.c[1].v) ? row.c[1].v : '';
-                    const tue = (row.c[2] && row.c[2].v) ? row.c[2].v : '';
-                    const wed = (row.c[3] && row.c[3].v) ? row.c[3].v : '';
-                    const thu = (row.c[4] && row.c[4].v) ? row.c[4].v : '';
-                    const fri = (row.c[5] && row.c[5].v) ? row.c[5].v : '';
-                    const sat = (row.c[6] && row.c[6].v) ? row.c[6].v : '';
-                    if(!timeSlot) return; 
+        const SCHEDULE_API_URL = 'https://wsvr.ihis.com.tw:8088/?fn=ihisexg&id=J01';
+        const APN_LABEL = { '1': '上午', '2': '下午', '3': '晚上' };
+        const WEEKDAY_LABEL = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+        let scheduleList = [];      // J01 回傳的 SCH_LST
+        let scheduleWeek = 0;       // 0 本週、1 下週
 
-                    const formatCell = (text) => {
-                        if(text === '休診') return `<td style="padding: 15px; border: 1px solid #ddd; color: #d9534f; background: #ffeeee;">${text}</td>`;
-                        if(text === '') return `<td style="padding: 15px; border: 1px solid #ddd;"></td>`;
-                        return `<td style="padding: 15px; border: 1px solid #ddd;">${text}</td>`;
-                    };
-                    const formattedTimeSlot = timeSlot.replace(/\n/g, '<br>');
+        const pad2 = (n) => String(n).padStart(2, '0');
+        const ymdOf = (d) => `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}`;
+        const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+        const hhmm = (t) => (t && t.length === 4) ? `${t.slice(0, 2)}:${t.slice(2)}` : (t || '');
+        const escHtml = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-                    html += `
-                    <tr>
-                        <td style="padding: 15px; border: 1px solid #ddd; font-weight: bold; background: #f9f9f9; white-space: nowrap;">${formattedTimeSlot}</td>
-                        ${formatCell(mon)}
-                        ${formatCell(tue)}
-                        ${formatCell(wed)}
-                        ${formatCell(thu)}
-                        ${formatCell(fri)}
-                        ${formatCell(sat)}
-                    </tr>`;
-                });
-            }
-            document.getElementById('schedule-container').innerHTML = html || '<tr><td colspan="7" class="loading-text">目前沒有門診時刻表資料。</td></tr>';
+        // 本週的星期一（今天是星期日時，直接從明天的星期一開始算本週）
+        function scheduleMonday() {
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const dow = today.getDay();
+            return dow === 0 ? addDays(today, 1) : addDays(today, 1 - dow);
         }
+
+        function loadSchedule() {
+            const start = scheduleMonday();
+            const ctl = new AbortController();
+            const timer = setTimeout(() => ctl.abort(), 8000);
+            fetch(SCHEDULE_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ "HOSP_ID": "3532091501", "ST_DATE": ymdOf(start), "END_DATE": ymdOf(addDays(start, 13)) }),
+                signal: ctl.signal
+            })
+                .then(response => {
+                    clearTimeout(timer);
+                    if (!response.ok) throw new Error("API 網路連線異常");
+                    return response.json();
+                })
+                .then(res => {
+                    if (res.RTN_CODE !== "0") throw new Error(res.RTN_MSG || "API 回傳錯誤代碼");
+                    scheduleList = res.SCH_LST || [];
+                    renderSchedule();
+                })
+                .catch(err => {
+                    clearTimeout(timer);
+                    console.error("門診班表獲取失敗", err);
+                    document.getElementById('schedule-container').innerHTML =
+                        '<tr><td colspan="7" class="loading-text">門診時刻表暫時無法載入，請稍後再試或來電詢問。</td></tr>';
+                });
+        }
+
+        // 各時段的看診時間：取該時段最常出現的起訖時間
+        function apnTimeRange(apn) {
+            const count = {};
+            scheduleList.filter(s => s.SCH_APN === apn).forEach(s => {
+                const k = `${hhmm(s.ST_TIME)}~${hhmm(s.END_TIME)}`;
+                count[k] = (count[k] || 0) + 1;
+            });
+            const keys = Object.keys(count).sort((a, b) => count[b] - count[a]);
+            return keys[0] || '';
+        }
+
+        function renderSchedule() {
+            const start = addDays(scheduleMonday(), scheduleWeek * 7);
+            const todayYmd = ymdOf(new Date());
+            const days = [0, 1, 2, 3, 4, 5].map(i => addDays(start, i));
+            const sunday = addDays(start, 6);
+            if (scheduleList.some(s => s.SCH_DATE === ymdOf(sunday))) days.push(sunday);   // 星期日有門診才顯示
+            const multiClinic = new Set(scheduleList.map(s => s.CLINIC_NA)).size > 1;
+
+            // 表頭：星期＋日期，今天標示
+            const th = 'padding: 12px 10px; border: 1px solid #ddd;';
+            document.getElementById('schedule-head').innerHTML = `<th style="${th}">時段</th>` + days.map(d =>
+                `<th style="${th}" class="${ymdOf(d) === todayYmd ? 'today' : ''}">${WEEKDAY_LABEL[d.getDay()]}<br><span style="font-weight: normal; font-size: 0.9rem;">${d.getMonth() + 1}/${d.getDate()}${ymdOf(d) === todayYmd ? '（今天）' : ''}</span></th>`
+            ).join('');
+
+            const td = 'padding: 15px; border: 1px solid #ddd;';
+            let html = '';
+            ['1', '2', '3'].forEach(apn => {
+                const range = apnTimeRange(apn);
+                if (!range) return;     // 兩週內完全沒有這個時段就不顯示
+                html += `<tr><td style="${td} font-weight: bold; background: #f9f9f9; white-space: nowrap;">${APN_LABEL[apn]}<br><span style="font-weight: normal; font-size: 0.9rem;">${range}</span></td>`;
+                days.forEach(d => {
+                    const ymd = ymdOf(d);
+                    const cls = [ymd === todayYmd ? 'today' : '', ymd < todayYmd ? 'past' : ''].join(' ').trim();
+                    const sessions = scheduleList.filter(s => s.SCH_DATE === ymd && s.SCH_APN === apn);
+                    if (!sessions.length) {
+                        html += `<td style="${td}" class="sch-off ${cls}">休診</td>`;
+                        return;
+                    }
+                    const cell = sessions.map(s => {
+                        const name = (multiClinic ? `${escHtml(s.CLINIC_NA)} ` : '') + escHtml(s.DOCT_NAME);
+                        const time = `${hhmm(s.ST_TIME)}~${hhmm(s.END_TIME)}` !== range ? `<br><span style="font-size: 0.85rem; color: #888;">${hhmm(s.ST_TIME)}~${hhmm(s.END_TIME)}</span>` : '';
+                        const tag = s.NEXT_VIEW === -1 ? '<br><span class="sch-tag">停診</span>' : '';
+                        return name + time + tag;
+                    }).join('<hr style="border: 0; border-top: 1px dashed #ddd; margin: 6px 0;">');
+                    html += `<td style="${td}" class="${cls}">${cell}</td>`;
+                });
+                html += '</tr>';
+            });
+            document.getElementById('schedule-container').innerHTML = html ||
+                `<tr><td colspan="${days.length + 1}" class="loading-text">這週目前沒有門診班表資料。</td></tr>`;
+        }
+
+        // 本週／下週切換
+        document.querySelectorAll('#schedule-week-tabs .week-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                scheduleWeek = Number(btn.dataset.week);
+                document.querySelectorAll('#schedule-week-tabs .week-tab').forEach(b => b.classList.toggle('active', b === btn));
+                if (scheduleList.length) renderSchedule();
+            });
+        });
 
         // ==========================================
         // 5.5 渲染：復健時刻表
@@ -643,7 +734,7 @@
             fetchSheetData('最新消息', renderNews, 'news-container');
             fetchSheetData('專業團隊', renderTeam, 'team-container');
             fetchSheetData('治療項目', renderServices, 'services-container');
-            fetchSheetData('門診時刻表', renderSchedule, 'schedule-container');
+            loadSchedule();     // 門診時刻表改用 iHIS J01 即時班表（不再讀試算表「門診時刻表」分頁）
             fetchSheetData('復健時刻表', renderRehabSchedule, 'rehab-schedule-container');
             
             // 執行看診進度 API
