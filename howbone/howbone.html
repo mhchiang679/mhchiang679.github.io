@@ -183,7 +183,8 @@
             <h2 style="text-align: center; margin-top: 0; margin-bottom: 30px; color: #fff;">目前看診進度</h2>
             <div class="container" style="display: flex; justify-content: center; text-align: center;">
                 <div style="display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 400px;">
-                    <div id="clinic-name-1" style="font-size: 1.4rem; font-weight: bold; margin-bottom: 12px; color: #e1f0f6;">一診</div>
+                    <div id="clinic-name-1" style="font-size: 1.4rem; font-weight: bold; margin-bottom: 4px; color: #e1f0f6;">一診</div>
+                    <div id="queue-doctor-1" style="font-size: 1.15rem; margin-bottom: 12px; color: #fff; min-height: 1.6em;"></div>
                     <div style="background: rgba(255,255,255,0.08); padding: 30px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); width: 100%;">
                         <div style="font-size: 1.1rem; opacity: 0.8; margin-bottom: 10px;">目前叫號</div>
                         <div style="color: #f7b500; font-size: 4rem; font-weight: bold; line-height: 1;"><span id="queue-display-1">--</span></div>
@@ -552,6 +553,7 @@
                 .then(res => {
                     if (res.RTN_CODE !== "0") throw new Error(res.RTN_MSG || "API 回傳錯誤代碼");
                     scheduleList = res.SCH_LST || [];
+                    updateQueueDoctor();
                     renderSchedule();
                 })
                 .catch(err => {
@@ -613,6 +615,27 @@
             });
             document.getElementById('schedule-container').innerHTML = html ||
                 `<tr><td colspan="${days.length + 1}" class="loading-text">這週目前沒有門診班表資料。</td></tr>`;
+        }
+
+        // 叫號區：依 J01 今天的班表，顯示目前時段的看診醫師
+        // 目前時段 = 起診前 30 分鐘 ～ 結診後 60 分鐘（看診常會延後）
+        let queueClinicName = '一診';
+        function updateQueueDoctor() {
+            const el = document.getElementById('queue-doctor-1');
+            if (!el) return;
+            const now = new Date();
+            const todayYmd = ymdOf(now);
+            const nowMin = now.getHours() * 60 + now.getMinutes();
+            const toMin = (t) => parseInt(t.slice(0, 2), 10) * 60 + parseInt(t.slice(2), 10);
+            const candidates = scheduleList.filter(x =>
+                x.SCH_DATE === todayYmd &&
+                (x.CLINIC_NA === queueClinicName || (queueClinicName || '').includes(x.CLINIC_NA)) &&
+                x.NEXT_VIEW !== -1 &&
+                nowMin >= toMin(x.ST_TIME) - 30 && nowMin <= toMin(x.END_TIME) + 60
+            );
+            // 兩個時段重疊時（例如下午延診到晚診前），以正在看診時間內的那一診為準，否則取較晚的一診
+            const s = candidates.find(x => nowMin >= toMin(x.ST_TIME) && nowMin <= toMin(x.END_TIME)) || candidates[candidates.length - 1];
+            el.innerText = s ? `${APN_LABEL[s.SCH_APN] || ''}診　${s.DOCT_NAME} 醫師` : '';
         }
 
         // 本週／下週切換
@@ -714,6 +737,8 @@
                             }
                         });
                         if (document.getElementById('clinic-name-1')) document.getElementById('clinic-name-1').innerText = clinic1.name;
+                        queueClinicName = clinic1.name;
+                        updateQueueDoctor();
                         if (document.getElementById('queue-display-1')) document.getElementById('queue-display-1').innerText = clinic1.no;
                     } else {
                         throw new Error(res.RTN_MSG || "API 回傳錯誤代碼");
@@ -739,7 +764,8 @@
             
             // 執行看診進度 API
             fetchQueue(); 
-            setInterval(fetchQueue, 5000); 
+            setInterval(fetchQueue, 5000);
+            setInterval(loadSchedule, 30 * 60 * 1000);   // 每 30 分鐘重新抓班表（網頁一直開著時，換天、換班也會更新） 
         });
     </script>
 </body>
