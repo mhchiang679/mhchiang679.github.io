@@ -590,25 +590,44 @@
         // ==========================================
         // 6. 重慶 WebAPI 叫號系統串接 (只取一診)
         // ==========================================
-        function fetchQueue() {
-            const QUEUE_API_URL = 'https://wsvr.ihis.com.tw:8088/?fn=ihisexg&id=J02'; // 2026-10-25 iHIS 新網址，舊網址最晚 2026-11-30 停用 
-            
-            const fetchOptions = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    "HOSP_ID": "3532091501"
-                })
-            };
+        // iHIS 看診進度 API（J02）
+        // 依 2026-10-25 文件：先試新網址(:8088)，連不上再用舊網址（舊網址最晚 2026-11-30 停用）
+        // 2026-11-02 實測 :8088 連線逾時，暫保留舊網址作備援；新網址確認可用後可移除第二筆
+        const QUEUE_API_URLS = [
+            'https://wsvr.ihis.com.tw:8088/?fn=ihisexg&id=J02',
+            'https://wsvr.ihis.com.tw/api/WebReg/iHis.php?fn=ihisexg&id=J02'
+        ];
+        let queueUrlIndex = 0;      // 記住上次成功的網址，下次直接用
+        let queueBusy = false;      // 避免上一輪還沒結束就疊加請求
 
-            fetch(QUEUE_API_URL, fetchOptions)
-                .then(response => {
-                    if (!response.ok) throw new Error("API 網路連線異常");
-                    return response.json();
-                })
-                .then(res => { 
+        function postQueue(url) {
+            const ctl = new AbortController();
+            const timer = setTimeout(() => ctl.abort(), 4000);
+            return fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ "HOSP_ID": "3532091501" }),
+                signal: ctl.signal
+            }).then(response => {
+                clearTimeout(timer);
+                if (!response.ok) throw new Error("API 網路連線異常");
+                return response.json();
+            }).catch(err => { clearTimeout(timer); throw err; });
+        }
+
+        function requestQueue() {
+            const order = QUEUE_API_URLS.map((_, i) => (queueUrlIndex + i) % QUEUE_API_URLS.length);
+            const tryAt = (k) => postQueue(QUEUE_API_URLS[order[k]])
+                .then(res => { queueUrlIndex = order[k]; return res; })
+                .catch(err => (k + 1 < order.length ? tryAt(k + 1) : Promise.reject(err)));
+            return tryAt(0);
+        }
+
+        function fetchQueue() {
+            if (queueBusy) return;
+            queueBusy = true;
+            requestQueue()
+                .then(res => {
                     if (res.RTN_CODE === "0" && res.LED_LST) {
                         let clinic1 = { name: '一診', no: '--' };
                         res.LED_LST.forEach(item => {
@@ -625,8 +644,9 @@
                 })
                 .catch(err => {
                     console.warn("看診進度獲取失敗，維持或重置為預設狀態", err);
-                    if(document.getElementById('queue-display-1')) document.getElementById('queue-display-1').innerText = '--'; 
-                });
+                    if(document.getElementById('queue-display-1')) document.getElementById('queue-display-1').innerText = '--';
+                })
+                .finally(() => { queueBusy = false; });
         }
 
         // 網頁載入完成後，執行抓資料功能
