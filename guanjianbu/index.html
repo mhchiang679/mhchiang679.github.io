@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>關健步4X｜用五歲小孩也懂的方式說明</title>
+<style>
+  :root{
+    --teal:#0E4D5C; --teal-2:#1A6576; --tint:#EEF4F4; --ink:#1F2A2E; --muted:#5F7479;
+    --salmo:#E8833A; --tama:#C8901A; --ucii:#3E9B6E; --msm:#3A7CA5; --red:#C0392B;
+    --line:#D5DFE0; --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC","Noto Sans CJK TC",system-ui,sans-serif;color:var(--ink);background:#fff;line-height:1.7;-webkit-font-smoothing:antialiased}
+  button{font:inherit;cursor:pointer}
+  .wrap{max-width:980px;margin:0 auto;padding:0 20px}
+
+  header{background:var(--teal);color:#fff;padding:40px 0 28px}
+  .eyebrow{color:var(--salmo);font-weight:700;letter-spacing:.08em;font-size:14px}
+  h1{font-size:clamp(26px,4.4vw,40px);line-height:1.3;margin:6px 0 10px}
+  .lead{color:#D4E4E6;margin:0;max-width:640px}
+
+  .tabs{display:flex;gap:8px;margin-top:26px}
+  .tab{border:0;border-radius:999px;padding:10px 20px;background:rgba(255,255,255,.12);color:#fff;font-weight:700}
+  .tab[aria-selected="true"]{background:#fff;color:var(--teal)}
+
+  main{padding:28px 0 60px}
+  .panel[hidden]{display:none}
+
+  /* helpers row */
+  .helpers{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+  .helper{border:2px solid transparent;background:var(--tint);border-radius:var(--radius);padding:14px 12px;text-align:left;transition:transform .15s,border-color .15s}
+  .helper:hover{transform:translateY(-2px)}
+  .helper[aria-pressed="true"]{border-color:var(--c);background:#fff}
+  .helper .dot{width:40px;height:40px;border-radius:50%;background:var(--c);display:grid;place-items:center;font-size:20px;margin-bottom:8px}
+  .helper b{display:block;color:var(--c);font-size:16px}
+  .helper span{font-size:13px;color:var(--muted)}
+  .helper .role{display:block;color:var(--ink);font-size:14px;margin-top:4px}
+
+  .toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+  .filters{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font-size:14px;color:var(--ink)}
+  .chip[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:#fff}
+
+  .mode{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted)}
+  .switch{position:relative;width:200px;height:38px;border-radius:999px;background:var(--tint);border:0;padding:0;display:flex}
+  .switch span{flex:1;z-index:1;font-weight:700;font-size:14px;display:grid;place-items:center;color:var(--muted);transition:color .2s}
+  .switch::before{content:"";position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:32px;border-radius:999px;background:var(--salmo);transition:transform .25s}
+  .switch[data-mode="pro"]::before{transform:translateX(100%);background:var(--teal)}
+  .switch[data-mode="kid"] span:first-child,.switch[data-mode="pro"] span:last-child{color:#fff}
+
+  .faq{display:flex;flex-direction:column;gap:10px}
+  .q{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:#fff}
+  .q[hidden]{display:none}
+  .q > button{width:100%;border:0;background:#fff;text-align:left;padding:16px 18px;display:flex;gap:14px;align-items:center}
+  .q > button:hover{background:#FAFCFC}
+  .tag{flex:none;font-size:12px;font-weight:700;color:#fff;background:var(--c,var(--teal));border-radius:999px;padding:3px 10px}
+  .qt{flex:1;font-weight:700;font-size:17px}
+  .chev{flex:none;width:26px;height:26px;border-radius:50%;background:var(--tint);display:grid;place-items:center;transition:transform .2s;color:var(--teal);font-weight:700}
+  .q.open .chev{transform:rotate(45deg)}
+  .a{display:none;padding:0 18px 18px 18px}
+  .q.open .a{display:block}
+  .a .kid,.a .pro{border-radius:12px;padding:14px 16px}
+  .a .kid{background:#FDF3EA}
+  .a .pro{background:var(--tint)}
+  .a .label{font-size:12px;font-weight:700;letter-spacing:.05em;margin-bottom:4px}
+  .a .kid .label{color:var(--salmo)}
+  .a .pro .label{color:var(--teal)}
+  .a p{margin:0 0 6px}
+  .a p:last-child{margin:0}
+  body[data-mode="kid"] .a .pro{display:none}
+  body[data-mode="pro"] .a .kid{display:none}
+  .src{font-size:12px;color:var(--muted);margin-top:6px}
+  .empty{color:var(--muted);text-align:center;padding:30px}
+
+  .tip{margin-top:22px;border-radius:var(--radius);background:var(--teal);color:#fff;padding:18px 20px;display:flex;gap:14px;align-items:flex-start}
+  .tip .ico{font-size:24px;line-height:1}
+  .tip b{color:#FFD7B5}
+
+  /* quiz */
+  .quiz-card{border:1px solid var(--line);border-radius:20px;padding:26px;max-width:720px;margin:0 auto}
+  .progress{display:flex;align-items:center;gap:12px;margin-bottom:18px;font-size:14px;color:var(--muted)}
+  .bar{flex:1;height:8px;background:var(--tint);border-radius:999px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--salmo);width:0;transition:width .3s}
+  .qq{font-size:21px;font-weight:700;line-height:1.5;margin:0 0 18px}
+  .opts{display:flex;flex-direction:column;gap:10px}
+  .opt{border:2px solid var(--line);background:#fff;border-radius:14px;padding:12px 16px;text-align:left;font-size:16px;display:flex;gap:12px;align-items:center;transition:border-color .15s,background .15s}
+  .opt:hover:not(:disabled){border-color:var(--teal-2)}
+  .opt .k{flex:none;width:28px;height:28px;border-radius:50%;background:var(--tint);display:grid;place-items:center;font-weight:700;color:var(--teal);font-size:14px}
+  .opt.right{border-color:var(--ucii);background:#EAF6EF}
+  .opt.right .k{background:var(--ucii);color:#fff}
+  .opt.wrong{border-color:var(--red);background:#FBECEA}
+  .opt.wrong .k{background:var(--red);color:#fff}
+  .opt:disabled{cursor:default}
+  .explain{display:none;margin-top:16px;border-radius:14px;background:#FDF3EA;padding:14px 16px}
+  .explain.show{display:block}
+  .explain b{display:block;margin-bottom:4px}
+  .explain.good b{color:var(--ucii)}
+  .explain.bad b{color:var(--red)}
+  .nav{display:flex;justify-content:flex-end;margin-top:18px}
+  .btn{border:0;border-radius:999px;padding:11px 24px;font-weight:700;background:var(--teal);color:#fff}
+  .btn.ghost{background:var(--tint);color:var(--teal)}
+  .btn:disabled{opacity:.35;cursor:default}
+  .result{text-align:center}
+  .score{font-size:64px;font-weight:800;color:var(--salmo);line-height:1.1;margin:6px 0}
+  .result p{color:var(--muted)}
+  .review{text-align:left;margin:20px 0;display:flex;flex-direction:column;gap:8px}
+  .review div{border-radius:12px;padding:10px 14px;background:var(--tint);font-size:15px}
+  .review div.miss{background:#FBECEA}
+  .review small{display:block;color:var(--muted)}
+
+  footer{border-top:1px solid var(--line);padding:18px 0 30px;font-size:12px;color:var(--muted)}
+
+  @media (max-width:720px){
+    .helpers{grid-template-columns:repeat(2,1fr)}
+    .quiz-card{padding:20px}
+    .qq{font-size:19px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body data-mode="kid">
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">采慧醫藥｜員工教育訓練</div>
+    <h1>關健步 4X，<br>用五歲小孩也懂的話說清楚</h1>
+    <p class="lead">先用白話把原理弄懂，再用小測驗確認自己記住了。每一題都能切換「五歲版」和「專業版」說明。</p>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" aria-controls="p-faq" id="t-faq">白話問答</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="p-quiz" id="t-quiz">小測驗</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- ========== FAQ ========== -->
+  <section class="panel" id="p-faq" role="tabpanel" aria-labelledby="t-faq">
+    <div class="helpers" id="helpers"></div>
+
+    <div class="toolbar">
+      <div class="filters" id="filters"></div>
+      <div class="mode">說明方式
+        <button class="switch" id="modeSwitch" data-mode="kid" aria-label="切換五歲版或專業版說明"><span>五歲版</span><span>專業版</span></button>
+      </div>
+    </div>
+
+    <div class="faq" id="faq"></div>
+
+    <div class="tip">
+      <div class="ico">💬</div>
+      <div><b>跟客人說明的小提醒：</b>關健步是保健食品，對外說明時請用「保養、幫助、維持」這類說法，避免說「治療、治好、根治」等醫療用語；研究數據說「研究中觀察到」，不要保證每個人的效果。</div>
+    </div>
+  </section>
+
+  <!-- ========== QUIZ ========== -->
+  <section class="panel" id="p-quiz" role="tabpanel" aria-labelledby="t-quiz" hidden>
+    <div class="quiz-card" id="quiz"></div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">資料來源：關健步4X複方UCII膠囊產品介紹、一丸 SalmoPG 原料資料、TamaFlex 原料資料（Int J Med Sci 2019；Evid Based Complement Alternat Med 2022）、UC-II 臨床文獻（Int J Med Sci 2009；Nutr J 2016）。僅供內部教育訓練使用。</div>
+</footer>
+
+<script>
+const ING = {
+  all:   {name:"全部", c:"#0E4D5C"},
+  base:  {name:"基礎觀念", c:"#0E4D5C"},
+  salmo: {name:"SalmoPG", c:"#E8833A", emoji:"🐟", full:"鮭魚鼻軟骨", dose:"50 mg", role:"補「海綿」，讓軟骨保水"},
+  tama:  {name:"TamaFlex", c:"#C8901A", emoji:"🌿", full:"羅望果薑黃", dose:"250 mg", role:"當「滅火器」，把發炎關小"},
+  ucii:  {name:"UC-II", c:"#3E9B6E", emoji:"🛡️", full:"非變性二型膠原蛋白", dose:"40 mg", role:"教「警衛」別亂打自己人"},
+  msm:   {name:"MSM", c:"#3A7CA5", emoji:"🔩", full:"甲基硫醯基甲烷", dose:"600 mg", role:"送「釘子」，給軟骨蓋材料"},
+  use:   {name:"怎麼吃", c:"#0E4D5C"},
+};
+
+const FAQ = [
+  {cat:"base", q:"關節和軟骨到底是什麼？",
+   kid:["兩根骨頭碰在一起的地方就是關節。骨頭的尾巴包著一層「軟骨」，就像鞋底的氣墊，走路、跳跳時幫你擋住撞擊。","氣墊如果變薄、變乾，骨頭就會互相摩擦，走路就會卡卡、痛痛的。"],
+   pro:["軟骨主要由水（65–80%）、二型膠原蛋白（15–20%）、蛋白聚醣（3–5%）及玻尿酸（約1%）組成。","隨年齡增長與長期機械壓力，軟骨中蛋白聚醣減少、保水力下降，進而出現退化性關節炎（OA）的疼痛與活動受限。"]},
+  {cat:"base", q:"「治標＋治本」是什麼意思？",
+   kid:["想像房子失火了：要先把火滅掉（治標），再把燒壞的牆修好（治本）。","關健步裡：UC-II 和 TamaFlex 負責滅火；SalmoPG 和 MSM 負責送修房子的材料。兩件事一起做，才不會一邊修、一邊又被燒壞。"],
+   pro:["治標：UC-II、羅望果薑黃降低關節發炎反應，減少關節持續被破壞。","治本：蛋白聚醣、MSM 提供關節軟骨的基礎營養素，幫助修護。附加價值是蛋白聚醣能減少水分流失，改善皮膚鬆弛、皺紋。"]},
+  {cat:"salmo", q:"SalmoPG（蛋白聚醣）在做什麼？",
+   kid:["軟骨裡有很多小小的「海綿」，會把水抓住，讓軟骨 Q Q 的、有彈性。這種海綿就叫蛋白聚醣。","年紀變大，海綿越來越少，軟骨就變乾、變薄。SalmoPG 就是幫你補海綿的材料。"],
+   pro:["蛋白聚醣由核心蛋白連接大量糖胺聚醣鏈，並與玻尿酸結合，富含葡萄糖胺、軟骨素、玻尿酸。軟骨中的蛋白聚醣含量是玻尿酸的 3–5 倍。","SalmoPG 由日本一丸 Ichimaru Pharcos 以專利製法從鮭魚鼻軟骨萃取，蛋白聚醣 ≥ 20%，關節建議劑量 50 mg/day。"]},
+  {cat:"salmo", q:"為什麼說 SalmoPG「小分子、好吸收」？",
+   kid:["想像要把球丟過一張網：大顆的球卡在網上過不去，小顆的球咻一下就過去了。","別家的原料像大顆的球，一丸的 SalmoPG 只有它的四分之一大，所以比較容易被肚子吸收。"],
+   pro:["他牌原料分子量 > 180 萬，一丸 SalmoPG 分子量約 45 萬，約為四分之一。","大鼠小腸實驗中，一丸蛋白聚醣在空腸、迴腸的吸收量約為他牌原料的 2 倍。"],
+   src:"Biosci Biotechnol Biochem. 2013;77(3):654-6"},
+  {cat:"salmo", q:"SalmoPG 有哪些人體研究？",
+   kid:["科學家請有膝蓋困擾的人每天吃 50 mg，再用很厲害的照相機（MRI）拍膝蓋裡面。","吃了 24 週後，照片裡的「海綿」變多了、壞掉的部分變少了。另一個研究裡，大家從第 2 週就說膝蓋比較不痛。"],
+   pro:["2019 MRI 研究：9 人、50 mg/天、24 週，T1ρ 顯示軟骨蛋白聚醣濃度增加，T2 顯示變性膠原蛋白減少。","2018 研究：12 人、12 週，第 2 週起靜止、走路、上下樓梯疼痛下降。另有 72 名輕中度 OA 患者 24 週試驗，KOOS 症狀與疼痛優於安慰劑，且未出現副作用。"],
+   src:"BIO Clinica 2019；Jpn Pharmacol Ther 2018；SalmoPG 機能性表示論文"},
+  {cat:"salmo", q:"為什麼一公斤要用 1,600 條鮭魚？",
+   kid:["鮭魚鼻子裡的那一小塊軟骨才是寶貝，一條魚只有一點點，所以要很多很多條魚，才能做出一公斤。","這也是它珍貴的原因。"],
+   pro:["1 kg 鮭魚抽出物約需 1,600 尾鮭魚製成。原料源自日本弘前大學的研究，靈感來自青森鄉土料理「氷頭なます」（涼拌鮭魚鼻軟骨）。","一丸擁有超過 30 篇學術發表、4 項日本機能性表示食品認證，原料耐熱耐酸，加工安定性佳。"]},
+  {cat:"tama", q:"TamaFlex（羅望果薑黃）在做什麼？",
+   kid:["關節發炎就像關節裡有一把小火一直在燒，燒得紅紅、腫腫、痛痛的。","TamaFlex 就像滅火器，把火關小；它也會擋住讓關節「生鏽」的壞東西（自由基）。"],
+   pro:["羅望果：薑黃 = 2：1 的組成專利（原花青素 > 65%、薑黃素 > 3%）。","三大作用：抑制花生四烯酸（AA）生成發炎物質；抑制 TNF-α、IL-1β 活性，減少發炎反應；抑制自由基產生，降低關節氧化傷害。建議用量 250 mg/day。"]},
+  {cat:"tama", q:"TamaFlex 多快會有感覺？",
+   kid:["在一個研究裡，有膝蓋退化的人吃了 TamaFlex，大約 5 天就開始覺得比較不痛、比較好走。","不過每個人身體不一樣，這是研究裡看到的結果，不是保證喔。"],
+   pro:["2022 研究：60 位 KL 2–3 級輕中度 OA 患者，250 mg/天、56 天，第 5 天起疼痛、僵硬、步行距離、爬樓時間顯著改善，56 天時 MMP-3 與軟骨損害指標 CTX-II 下降。","2019 研究：90 位關節不適受試者，14 天起 VAS 與 WOMAC 顯著改善。"],
+   src:"Evid Based Complement Alternat Med 2022；Int J Med Sci 2019;16(6):845-853"},
+  {cat:"ucii", q:"UC-II 是怎麼幫忙的？",
+   kid:["身體裡有一群「警衛」（免疫細胞）負責打壞人。有時候警衛搞錯了，把自己的軟骨當成壞人一直打，關節就發炎了。","UC-II 吃下去後會在肚子裡給警衛「看照片」：這是自己人喔！警衛學會之後，就派出「和平使者」到關節去，叫大家別再打了。"],
+   pro:["這個機制叫口服耐受（oral tolerance）：UC-II 在腸道與淋巴組織（Peyer's patches）結合，活化調節性 T 細胞（Treg）。","Treg 隨血液到達關節，分泌 TGF-β、IL-4、IL-10 等抗發炎物質，有助於減少關節發炎並促進軟骨修復。"]},
+  {cat:"ucii", q:"為什麼 UC-II 只要 40 mg 就夠？",
+   kid:["因為 UC-II 不是在「補材料」，而是在「教警衛認人」。","教東西只要給看一下照片就好，不用搬一大堆東西過去，所以一點點就夠了。"],
+   pro:["UC-II 透過免疫調節作用，所需劑量遠低於作為原料補充的成分；臨床有效劑量為每日 40 mg。","2009 年研究中，UC-II 40 mg 的效果優於葡萄糖胺 1500 mg＋軟骨素 1200 mg。"]},
+  {cat:"ucii", q:"UC-II 跟葡萄糖胺＋軟骨素比，哪個好？",
+   kid:["科學家做過比賽：一組吃 UC-II，一組吃很多葡萄糖胺和軟骨素。","90 天後，吃 UC-II 那組膝蓋的改善幅度是另一組的兩倍以上；另一個 180 天、186 人的大比賽，也是 UC-II 那組最好。"],
+   pro:["Int J Med Sci 2009：52 位 OA 患者、90 天，WOMAC 改善 33.3% vs 14%、VAS 40.4% vs 15.4%、Lequesne 20.2% vs 5.9%。","Nutr J 2016：186 位 OA 患者、180 天、三組（安慰劑／GC／UC-II 40 mg），UC-II 組 WOMAC、VAS、Lequesne 下降幅度最大。"],
+   src:"Crowley DC et al. 2009；Lugo JP et al. 2016"},
+  {cat:"msm", q:"MSM 是什麼？為什麼要加？",
+   kid:["蓋房子需要釘子，身體做膠原蛋白和軟骨也需要一種材料叫「硫」。","MSM 就是把「硫」送進身體的小貨車。它的量不多，對肚子比較溫和。"],
+   pro:["硫是人體第三豐富的礦物質，是甲硫胺酸、半胱胺酸的必要元素，也是角蛋白、膠原蛋白、關節軟骨的基礎原料，並為穀胱甘肽的核心成分。","本產品 MSM 600 mg/day：提供硫營養素，低劑量可減少腸胃不適。"]},
+  {cat:"use", q:"一天吃幾顆？什麼時候吃？",
+   kid:["膝蓋不舒服的時候，一天吃 2 顆；比較好了，就一天 1 顆保養。一天最多 2 顆喔。","白天吃比較好；肚子比較敏感的人，吃完飯再吃。"],
+   pro:["加強保健／慢性不適期：每日 2 顆，每日請勿超過 2 顆；日常一般保健：每日 1 顆。","避免睡前使用（MSM 可能影響睡眠），腸胃敏感者建議飯後服用。狀況好轉可轉金力捷，接續軟骨＋硬骨保健。"]},
+  {cat:"use", q:"哪些人不適合吃？",
+   kid:["肚子裡有寶寶、或正在餵奶的媽媽，要先問醫生。","正在吃「讓血不容易凝固」的藥的人，也要先問醫生；對鮭魚過敏的人就不要吃。"],
+   pro:["孕婦及哺乳期婦女：使用前應諮詢醫師。","服用抗凝血劑者：應避免使用或諮詢醫師。本產品含鮭魚抽出物，對其過敏體質者不宜食用。"]},
+  {cat:"use", q:"跟其他牌子比，關健步特別在哪？",
+   kid:["很多牌子只有 1、2 個好幫手，或是幫手的量太少。","關健步把 4 個好幫手放在一起，而且每個的量都跟科學家做研究時用的一樣多，價格卻差不多。"],
+   pro:["SalmoPG 50 mg、TamaFlex 250 mg、UC-II 40 mg 皆為臨床試驗劑量，另含 MSM 600 mg。","同樣約 60 元／天（1,780 元／60 粒），比較表中只有關健步同時含 UC-II、SalmoPG、TamaFlex、MSM 四大成分。"]},
+];
+
+const QUIZ = [
+  {q:"關節裡的「軟骨」最像什麼？", o:["鞋底的氣墊","汽車的油箱","手機的電池","房子的屋頂"], a:0,
+   e:"軟骨包在骨頭末端，像氣墊一樣緩衝撞擊；變薄、變乾就容易卡卡痛痛。"},
+  {q:"「治標＋治本」中，負責「先滅火」的是哪兩個？", o:["SalmoPG 和 MSM","UC-II 和 TamaFlex","MSM 和 UC-II","SalmoPG 和 TamaFlex"], a:1,
+   e:"UC-II 和 TamaFlex 降低發炎（滅火）；SalmoPG 和 MSM 提供修護材料（修房子）。"},
+  {q:"蛋白聚醣在軟骨裡最像什麼？", o:["釘子","滅火器","會吸水的海綿","警衛"], a:2,
+   e:"蛋白聚醣會把水抓住，讓軟骨有彈性。年紀變大，這些海綿會減少。"},
+  {q:"一丸 SalmoPG 的分子量大約是他牌原料的多少？", o:["2 倍","一樣大","十分之一","四分之一"], a:3,
+   e:"約 45 萬 vs 超過 180 萬，大約四分之一。小顆的球比較容易穿過網子，吸收量約為他牌的 2 倍。"},
+  {q:"UC-II 的作用比較像下面哪一個？", o:["教警衛認出「自己人」","搬很多磚頭去修牆","把火直接澆熄","幫軟骨補水"], a:0,
+   e:"這叫「口服耐受」：在腸道教免疫細胞認識軟骨，再派出 Treg 到關節減少發炎。所以只要 40 mg。"},
+  {q:"研究中，UC-II 40 mg 的改善幅度大約是葡萄糖胺＋軟骨素的幾倍？", o:["差不多","兩倍以上","一半","十倍"], a:1,
+   e:"2009 年研究中 WOMAC 改善 33.3% vs 14%，VAS 40.4% vs 15.4%，都是兩倍以上。"},
+  {q:"TamaFlex 是由哪兩種植物組成？", o:["薑和大蒜","綠茶和葡萄","羅望果和薑黃","乳香和訶子"], a:2,
+   e:"羅望果：薑黃 = 2：1 的專利組成，負責把發炎「關小」，也能擋自由基。"},
+  {q:"MSM 主要提供身體哪一種材料？", o:["鈣","鐵","維生素 C","硫"], a:3,
+   e:"硫像蓋房子的釘子，是膠原蛋白、軟骨的基礎原料。600 mg 的低劑量對腸胃比較溫和。"},
+  {q:"日常保養（不是不舒服期）建議一天吃幾顆？", o:["1 顆","2 顆","3 顆","4 顆"], a:0,
+   e:"不舒服期每天 2 顆，穩定後每天 1 顆。不論哪個時期，每天最多 2 顆。"},
+  {q:"為什麼建議白天吃、不要睡前吃？", o:["怕忘記吃","MSM 可能影響睡眠","晚上吸收比較差","膠囊會變軟"], a:1,
+   e:"MSM 可能影響睡眠，所以建議白天使用；腸胃敏感的人飯後再吃。"},
+  {q:"下列哪一位要「先問醫師」再使用？", o:["每天走路運動的上班族","爬樓梯會卡卡的阿姨","正在吃抗凝血劑的伯伯","想保養膝蓋的大學生"], a:2,
+   e:"服用抗凝血劑者應避免或諮詢醫師；孕婦、哺乳期婦女也要先問醫師；對鮭魚過敏者不宜食用。"},
+  {q:"向客人說明時，下列哪一句比較合適？", o:["吃了保證治好關節炎","這可以取代醫生開的藥","研究中觀察到能幫助關節保養","吃一週就能根治"], a:2,
+   e:"保健食品要用「保養、幫助」的說法，研究結果說「研究中觀察到」，不保證、不說治療。"},
+];
+
+/* ---------- tabs ---------- */
+const tabs = document.querySelectorAll(".tab");
+tabs.forEach(t => t.addEventListener("click", () => {
+  tabs.forEach(x => x.setAttribute("aria-selected", x === t));
+  document.querySelectorAll(".panel").forEach(p => p.hidden = p.id !== t.getAttribute("aria-controls"));
+}));
+
+/* ---------- helpers + filters ---------- */
+let filter = "all";
+const helpersEl = document.getElementById("helpers");
+["salmo","tama","ucii","msm"].forEach(k => {
+  const i = ING[k];
+  const b = document.createElement("button");
+  b.className = "helper"; b.style.setProperty("--c", i.c); b.dataset.k = k; b.setAttribute("aria-pressed","false");
+  b.innerHTML = `<div class="dot">${i.emoji}</div><b>${i.name}</b><span>${i.full}・${i.dose}</span><span class="role">${i.role}</span>`;
+  b.addEventListener("click", () => setFilter(filter === k ? "all" : k));
+  helpersEl.appendChild(b);
+});
+const filtersEl = document.getElementById("filters");
+["all","base","salmo","tama","ucii","msm","use"].forEach(k => {
+  const b = document.createElement("button");
+  b.className = "chip"; b.dataset.k = k; b.textContent = ING[k].name;
+  b.addEventListener("click", () => setFilter(k));
+  filtersEl.appendChild(b);
+});
+
+/* ---------- faq ---------- */
+const faqEl = document.getElementById("faq");
+FAQ.forEach((f, idx) => {
+  const d = document.createElement("div");
+  d.className = "q"; d.dataset.cat = f.cat;
+  d.innerHTML = `
+    <button aria-expanded="false" aria-controls="a${idx}">
+      <span class="tag" style="--c:${ING[f.cat].c}">${ING[f.cat].name}</span>
+      <span class="qt">${f.q}</span><span class="chev">+</span>
+    </button>
+    <div class="a" id="a${idx}">
+      <div class="kid"><div class="label">五歲版</div>${f.kid.map(p=>`<p>${p}</p>`).join("")}</div>
+      <div class="pro"><div class="label">專業版</div>${f.pro.map(p=>`<p>${p}</p>`).join("")}${f.src?`<div class="src">資料來源：${f.src}</div>`:""}</div>
+    </div>`;
+  d.querySelector("button").addEventListener("click", e => {
+    const open = d.classList.toggle("open");
+    e.currentTarget.setAttribute("aria-expanded", open);
+  });
+  faqEl.appendChild(d);
+});
+const emptyEl = document.createElement("div"); emptyEl.className = "empty"; emptyEl.textContent = "這個分類還沒有問題。"; emptyEl.hidden = true;
+faqEl.appendChild(emptyEl);
+
+function setFilter(k){
+  filter = k;
+  filtersEl.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.k === k));
+  helpersEl.querySelectorAll(".helper").forEach(h => h.setAttribute("aria-pressed", h.dataset.k === k));
+  let n = 0;
+  faqEl.querySelectorAll(".q").forEach(q => { const show = k === "all" || q.dataset.cat === k; q.hidden = !show; if (show) n++; });
+  emptyEl.hidden = n > 0;
+}
+setFilter("all");
+
+/* ---------- mode switch ---------- */
+const sw = document.getElementById("modeSwitch");
+sw.addEventListener("click", () => {
+  const m = sw.dataset.mode === "kid" ? "pro" : "kid";
+  sw.dataset.mode = m; document.body.dataset.mode = m;
+});
+
+/* ---------- quiz ---------- */
+const quizEl = document.getElementById("quiz");
+let cur = 0, score = 0, answers = [];
+
+function renderQ(){
+  const item = QUIZ[cur];
+  quizEl.innerHTML = `
+    <div class="progress"><span>第 ${cur+1} / ${QUIZ.length} 題</span><div class="bar"><i style="width:${cur/QUIZ.length*100}%"></i></div><span>得分 ${score}</span></div>
+    <p class="qq">${item.q}</p>
+    <div class="opts">${item.o.map((t,i)=>`<button class="opt" data-i="${i}"><span class="k">${"ABCD"[i]}</span><span>${t}</span></button>`).join("")}</div>
+    <div class="explain" id="ex"></div>
+    <div class="nav"><button class="btn" id="next" disabled>${cur === QUIZ.length-1 ? "看結果" : "下一題"}</button></div>`;
+  quizEl.querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => choose(+b.dataset.i)));
+  document.getElementById("next").addEventListener("click", () => { cur++; cur < QUIZ.length ? renderQ() : renderResult(); });
+}
+function choose(i){
+  const item = QUIZ[cur], ok = i === item.a;
+  if (ok) score++;
+  answers[cur] = i;
+  quizEl.querySelectorAll(".opt").forEach((b, j) => {
+    b.disabled = true;
+    if (j === item.a) b.classList.add("right");
+    else if (j === i) b.classList.add("wrong");
+  });
+  const ex = document.getElementById("ex");
+  ex.className = "explain show " + (ok ? "good" : "bad");
+  ex.innerHTML = `<b>${ok ? "答對了！" : "差一點！正確答案是 " + "ABCD"[item.a]}</b>${item.e}`;
+  quizEl.querySelector(".progress span:last-child").textContent = "得分 " + score;
+  document.getElementById("next").disabled = false;
+  document.getElementById("next").focus();
+}
+function renderResult(){
+  const pct = score / QUIZ.length;
+  const msg = pct === 1 ? "滿分！你已經可以當講師了。" : pct >= .75 ? "很棒！再看一下答錯的題目就完美了。" : pct >= .5 ? "有基礎了，回到「白話問答」再複習一次吧。" : "沒關係，先把「白話問答」的五歲版看一遍再來挑戰。";
+  quizEl.innerHTML = `
+    <div class="result">
+      <div class="progress"><span>完成</span><div class="bar"><i style="width:100%"></i></div><span>得分 ${score}</span></div>
+      <div class="score">${score} / ${QUIZ.length}</div>
+      <p>${msg}</p>
+      <div class="review">${QUIZ.map((it,i)=>`<div class="${answers[i]===it.a?"":"miss"}">${answers[i]===it.a?"✅":"❌"} ${it.q}<small>正確答案：${it.o[it.a]}</small></div>`).join("")}</div>
+      <button class="btn" id="again">再玩一次</button>
+      <button class="btn ghost" id="toFaq">回到白話問答</button>
+    </div>`;
+  document.getElementById("again").addEventListener("click", startQuiz);
+  document.getElementById("toFaq").addEventListener("click", () => document.getElementById("t-faq").click());
+}
+function startQuiz(){ cur = 0; score = 0; answers = []; renderQ(); }
+startQuiz();
+</script>
+</body>
+</html>
